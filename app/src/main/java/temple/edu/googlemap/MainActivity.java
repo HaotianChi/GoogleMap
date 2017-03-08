@@ -1,30 +1,24 @@
 package temple.edu.googlemap;
 
-import android.*;
 import android.Manifest;
 import android.app.Dialog;
-import android.app.PendingIntent;
-import android.content.Intent;
+
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.provider.SyncStateContract;
+
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.Geofence;
-import com.google.android.gms.location.GeofencingEvent;
-import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -36,15 +30,13 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.util.List;
-
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private GoogleMap mGoogleMap;
     GoogleApiClient mGoogleApiClient;
     public static final String GEOFENCE_ID = "MyGeofenceId";
     public LatLng lastPinnedLL = null;
-    private double latitude;
+    LocationRequest mLocationRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,19 +87,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mGoogleApiClient.connect();
     }
 
-/*    private void goToLocation(double lat, double lon) {
-        LatLng ll = new LatLng(lat, lon);
-        CameraUpdate update = CameraUpdateFactory.newLatLng(ll);
-        mGoogleMap.moveCamera(update);
-    }
-
-    private void goToLocationZoom(double lat, double lon, float zoom) {
-        LatLng ll = new LatLng(lat, lon);
-        CameraUpdate update = CameraUpdateFactory.newLatLngZoom(ll, zoom);
-        mGoogleMap.moveCamera(update);
-    }*/
-
-    LocationRequest mLocationRequest;
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
@@ -127,32 +106,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
 
-
-/*        double latitude = getCurrentLocation().getLatitude();
-        double longitude = getCurrentLocation().getLongitude();
-        Geofence geofence = new Geofence.Builder()
-                .setRequestId(GEOFENCE_ID)
-                .setCircularRegion(latitude, longitude, 6)
-                .setExpirationDuration(Geofence.NEVER_EXPIRE)
-                .setNotificationResponsiveness(1000)
-                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_EXIT)
-                .build();
-        GeofencingRequest geoFencingRequest = new GeofencingRequest.Builder()
-                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-                .addGeofence(geofence)
-                .build();
-        Intent intent = new Intent(this, GeofenceTransitionsIntentService.Class);
-        PendingIntent pendingIntent = PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        LocationServices.GeofencingApi.addGeofences(mGoogleApiClient, geoFencingRequest, pendingIntent);*/
-
-
         Button curButton = (Button) findViewById(R.id.current_location);
         curButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Location curLocation = getCurrentLocation();
                 LatLng current = new LatLng(curLocation.getLatitude(), curLocation.getLongitude());
                 mGoogleMap.addMarker(new MarkerOptions().position(current).title("I am here!"));
-                //mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(current));
                 lastPinnedLL = current;
             }
         });
@@ -161,25 +120,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         clearButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 mGoogleMap.clear();
-                lastPinnedLL = null;
+                //lastPinnedLL = null;
             }
         });
     }
-
-/*    protected void onHandleIntent(Intent intent){
-        GeofencingEvent event = GeofencingEvent.fromIntent(intent);
-        if(event.hasError()){
-        } else{
-            int transition = event.getGeofenceTransition();
-            List<Geofence> geofences = event.getTriggeringGeofences();
-            Geofence geofence = geofences.get(0);
-            String requestId = geofence.getRequestId();
-
-            if(transition == Geofence.GEOFENCE_TRANSITION_EXIT){
-
-            }
-        }
-    }*/
 
     private Location getCurrentLocation(){
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -212,8 +156,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         final Location loc = location;
         final ToggleButton moveSwitch = (ToggleButton) findViewById(R.id.toggle_move_switch);
         final ToggleButton pinSwitch = (ToggleButton) findViewById(R.id.toggle_pin_switch);
+        double latitude = loc.getLatitude();
+        double longitude = loc.getLongitude();
+        Toast toast = new Toast(this);
         if(location == null){
-            Toast.makeText(this, "Cant get current location", Toast.LENGTH_LONG).show();
+            toast.makeText(this, "Cant get current location", Toast.LENGTH_SHORT).show();
         } else if(moveSwitch.getText() == moveSwitch.getTextOn()){
             LatLng ll = new LatLng(loc.getLatitude(), loc.getLongitude());
             CameraUpdate update = CameraUpdateFactory.newLatLngZoom(ll, 15);
@@ -222,11 +169,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if(pinSwitch.getText() == pinSwitch.getTextOn()){
             if(lastPinnedLL == null){
-                Toast.makeText(this, "Will begin dropping pins after clicking 'FIND MYSELF'", Toast.LENGTH_SHORT).show();
+                lastPinnedLL = new LatLng(latitude, longitude);
+                mGoogleMap.addMarker(new MarkerOptions().position(lastPinnedLL).title("Initial Position!"));
             } else {
                 float[] results = new float[1];
-                double latitude = loc.getLatitude();
-                double longitude = loc.getLongitude();
                 Location.distanceBetween(lastPinnedLL.latitude, lastPinnedLL.longitude, latitude, longitude, results);
                 if (results[0] >= 5) {
                     mGoogleMap.addMarker(new MarkerOptions().position(new LatLng(latitude, longitude)).title("More than 5m!"));
@@ -234,6 +180,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
         }
+
+        toast.cancel();
     }
 
     /**
