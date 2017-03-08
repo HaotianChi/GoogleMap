@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">MyGoogleMapApp</string>
+    <string name="title_activity_maps">MyMap</string>
+    <string name="button_current_location">Find Myself</string>
+    <string name="toggle_move_switch">Move Switch</string>
+    <string name="toggle_pin_switch">Pin Switch</string>
+    <string name="geofence_id">geofence</string>
+</resources>
